@@ -1,44 +1,74 @@
-#ifndef DANIKK_PLATFORM_MEMORY_H
-#define DANIKK_PLATFORM_MEMORY_H
+#pragma once
 
-#include <danikk_framework/danikk_framework.h>
 #include <cstring>
+#include <cstdlib>
+#include <danikk_framework/danikk_framework.h>
 
 namespace danikk_framework
 {
-	constexpr size_t kyloBytes(size_t value){return value * 1024;}
-	constexpr size_t megaBytes(size_t value){return value * 1024 * 1024;}
-	constexpr size_t gigaBytes(size_t value){return value * 1024 * 1024 * 1024;}
-
-	template<class valueT> inline valueT& createNullRef()
+	inline constexpr size_t kib(size_t v)
 	{
-		return (valueT&)*(valueT*)NULL;
+		return v << 10;
 	}
 
-	template<class valueT> inline bool isNullRef(valueT& ref)
+	inline constexpr size_t mib(size_t v)
 	{
-		return (void*)&ref == NULL;
+		return v << 20;
 	}
 
-	template<class valueT> inline void nullifyObjectMemory(valueT& ref)
+	inline constexpr size_t gib(size_t v)
 	{
-		memset(&ref, 0, sizeof(valueT));
+		return v << 30;
 	}
 
 	template<class valueT> inline void objectToDefault(valueT& ref)
 	{
+		ref->~valueT();
 		new (&ref) valueT();
 	}
 
-	template<class valueT> inline valueT* structmalloc()
-	{
-		return (valueT*)::malloc(sizeof(valueT));
-	}
+#undef malloc
+#undef realloc
 
-	template<class classT, class argsT> inline void callConstructor(classT& object, argsT args...)
-	{
-		new (&object) classT(args);
-	}
-}
+	void enableAllocatorLog();
 
+	void* malloc(size_t s);
+
+	void* realloc(void* ptr, size_t s);
+
+	void* malloc_debug(const char* message, size_t s);
+
+	void* realloc_debug(const char* message, void* ptr, size_t s);
+#if IS_DEBUG
+#define malloc(arg) danikk_framework::malloc_debug(__PRETTY_FUNCTION__, arg);
+#define realloc(arg, size) danikk_framework::realloc_debug(__PRETTY_FUNCTION__, arg, size);
+#elif
+#define malloc(arg) danikk_framework::malloc(arg);
+#define realloc(arg, size) danikk_framework::realloc(arg, size);
 #endif
+
+	template<class valueT> inline valueT* structalloc()
+	{
+		return (valueT*)malloc(sizeof(valueT));
+	}
+
+	inline size_t alignBufferSize(size_t size)
+	{
+		size >>= 3;
+		size++;
+		size <<= 3;
+		return size;
+	}
+
+	/*inline uint64 memorytonum(byte* input, size_t s)
+	{
+		uint64 res = 0;
+		uint64 factor = 1;
+		for(char* end = input + s; input < end; input++)
+		{
+			res += (uint64)(*input) * factor;
+			factor <<= 8;
+		}
+		return res;
+	}*/
+}

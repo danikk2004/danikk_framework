@@ -1,8 +1,8 @@
 #pragma once
 
 #include <danikk_framework/danikk_framework.h>
-#include <danikk_framework/cstring.h>
 #include <danikk_framework/string_buffer.h>
+#include "cstring_functions.h"
 
 namespace danikk_framework
 {
@@ -10,6 +10,8 @@ namespace danikk_framework
 
 	struct DateTime
 	{
+		static constexpr size_t date_time_string_size = 19;
+
 		uint16 year;
 		uint8 month;
 		uint8 day;
@@ -17,10 +19,30 @@ namespace danikk_framework
 		uint8 minute;
 		uint8 second;
 
-		DateTimeString getString(char date_separator = '-', char datetime_separator = ' ', char time_separator = ':');
+		uint8 error = false;
 
-		DateTimeString getDateString(char date_separator = '-');
+		void parse(const String& data);
+
+		void readFrom(const char* data);
+
+		DateTimeString getString(char date_separator = '-', char datetime_separator = ' ', char time_separator = ':') const;
+
+		DateTimeString getDateString(char date_separator = '-') const;
 
 		static DateTime local();
-	} ALIGNED_STRUCT(8);
+	};
+
+	bool operator <(const DateTime& first, const DateTime& second);
+
+	bool operator >(const DateTime& first, const DateTime& second);
+
+	bool operator >=(const DateTime& first, const DateTime& second);
+
+	bool operator <=(const DateTime& first, const DateTime& second);
+
+	uint64 getLocalSecondsTimestamp();
+
+	uint64 getLocalMinutesTimestamp();
+
+	uint64 getSystemTimeInMilliseconds();
 }

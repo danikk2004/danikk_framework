@@ -5,7 +5,7 @@
 #include <danikk_framework/path_buffer.h>
 #include <danikk_framework/cmd.h>
 #include <danikk_framework/string.h>
-#include <danikk_framework/cstring.h>
+#include <danikk_framework/cstring_functions.h>
 #include <danikk_framework/localization.h>
 
 #ifdef IS_LINUX
@@ -18,7 +18,6 @@
 
 namespace danikk_framework
 {
-	static bool cwd_request = true;
 	static PathBuffer cwd_buffer;
 	static bool desktop_directory_request = true;
 	static PathBuffer desktop_directory_buffer;
@@ -32,16 +31,41 @@ namespace danikk_framework
         m_abp = m_data;
     }
 
+    PathBuffer::PathBuffer(const char* path)
+    {
+        memcpy(m_data, path, strlen(path) + 1);
+        findabp();
+    }
+
     PathBuffer::PathBuffer(const String& path)
     {
-        memcpy(m_data, path.data(), path.size());
+        memcpy(m_data, path.data(), path.size() + 1);
         findabp();
+    }
+
+    PathBuffer::PathBuffer(const PathBuffer& path)
+    {
+        memcpy(m_data, path.data(), path.size() + 1);
+        findabp();
+    }
+
+    PathBuffer& PathBuffer::operator=(const PathBuffer& path)
+    {
+        memcpy(m_data, path.data(), path.size() + 1);
+        findabp();
+        return *this;
     }
 
     void PathBuffer::push(const char* data, size_t size)
     {
         memcpy(m_abp, data, size);
         m_abp += size;
+    }
+
+    void PathBuffer::initEmpty()
+    {
+    	m_abp = m_data;
+    	memset(m_data, 0, capacity());
     }
 
     PathBuffer& PathBuffer::operator << (char chr)
@@ -208,12 +232,17 @@ namespace danikk_framework
 
     size_t PathBuffer::size() const
     {
-    	const char* end = m_data;
+    	const char* end = m_abp;
     	while(*end != '\0')
 		{
     		end++;
 		}
     	return end - m_data;
+    }
+
+    size_t PathBuffer::capacity() const
+    {
+    	return defaultCapacity;
     }
 
     char& PathBuffer::operator[](size_t index)
@@ -228,23 +257,13 @@ namespace danikk_framework
 
 	char PathBuffer::lastChar() const
 	{
-		return m_data[size()];
+		return m_data[size() - 1];
 	}
-
-    ostream& operator <<(ostream& cout, const PathBuffer& data)
-    {
-    	cout << data.c_string();
-    	return cout;
-    }
 
     const PathBuffer& getcwd()
     {
-    	if(cwd_request)
-    	{
-    		::getcwd((char*)cwd_buffer.m_data, PathBuffer::defaultCapacity);
-    		cwd_buffer.findabp();
-    		cwd_request = false;
-    	}
+		::getcwd((char*)cwd_buffer.m_data, PathBuffer::defaultCapacity);
+		cwd_buffer.findabp();
 		return cwd_buffer;
     }
 
@@ -254,7 +273,7 @@ namespace danikk_framework
     	{
             #if IS_LINUX
                 String desktopPath;
-                executeCommand(desktopPath, "xdg-user-dir DESKTOP");
+                cmd::execr(desktopPath, "xdg-user-dir DESKTOP");
                 while(desktopPath.lastChar() != '\n')
                 {
                 	desktopPath.resize(desktopPath.size() - 1);
@@ -273,16 +292,44 @@ namespace danikk_framework
     {
     	if(executable_directory_request)
     	{
-        	if(*executablePath == '\0')
+        	/*if(*executablePath == '\0')
         	{
         		cerr << localization("error/call_argv_init");
         		abort();
-        	}
+        	}*/
 
-        	size_t copyLen = (size_t)strfindlast(executablePath, pathSlash) - (size_t)executablePath + 1;
-        	memcpy(executable_directory_buffer.data(), executablePath, copyLen);
-        	executable_directory_buffer.m_abp = executable_directory_buffer.m_data + copyLen;
-        	executable_directory_request = false;
+			#if IS_LINUX
+    			executable_directory_buffer.initEmpty();
+				size_t size = readlink("/proc/self/exe", executable_directory_buffer.data(), executable_directory_buffer.capacity());
+
+				char* current = executable_directory_buffer.data();
+
+				if(*current == '\0' || size == 0)
+				{
+					std::cerr << "/proc/self/exe readlink error" << std::endl;
+					abort();
+				}
+
+				char* lastslashptr;
+
+				while(true)
+				{
+					char curchr = *current;
+					if(curchr == '\0')
+					{
+						executable_directory_buffer.m_abp = lastslashptr;
+						*(lastslashptr + 1) = '\0';
+						break;
+					}
+					else if(curchr == pathSlash)
+					{
+						lastslashptr = current;
+					}
+					current++;
+				}
+			#elif
+				#error not implemented
+			#endif
     	}
 
     	return executable_directory_buffer;

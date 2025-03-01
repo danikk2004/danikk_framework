@@ -1,5 +1,4 @@
-#ifndef DANIKK_PLATFORM_UNIQUE_PTR_H
-#define DANIKK_PLATFORM_UNIQUE_PTR_H
+#pragma once
 
 #include <danikk_framework/danikk_framework.h>
 

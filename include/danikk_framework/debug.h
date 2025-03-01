@@ -1,5 +1,4 @@
-#ifndef DANIKK_PLATFORM_DEBUG_H
-#define DANIKK_PLATFORM_DEBUG_H
+#pragma once
 #include <danikk_framework/danikk_framework.h>
 #include <danikk_framework/localization.h>
 #include <chrono>

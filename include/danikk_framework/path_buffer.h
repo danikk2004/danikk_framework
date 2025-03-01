@@ -1,10 +1,9 @@
-#ifndef DANIKK_PLATFORM_PATH_BUFFER_H
-#define DANIKK_PLATFORM_PATH_BUFFER_H
+#pragma once
 
 #include <danikk_framework/danikk_framework.h>
 #include <danikk_framework/string.h>
 #include <danikk_framework/current_system.h>
-#include <danikk_framework/cstring.h>
+#include <danikk_framework/cstring_functions.h>
 #include <danikk_framework/number.h>
 
 namespace danikk_framework
@@ -27,11 +26,19 @@ namespace danikk_framework
         void findabp();
 
         void push(const char* data, size_t size);
+
+        void initEmpty();
     public:
 
         PathBuffer();
 
+        PathBuffer(const char* path);
+
         PathBuffer(const String& path);
+
+        PathBuffer(const PathBuffer& path);
+
+        PathBuffer& operator=(const PathBuffer& path);
 
         PathBuffer& operator << (char chr);
 
@@ -47,12 +54,6 @@ namespace danikk_framework
 
     	PathBuffer& popDirectory();
 
-    	friend const PathBuffer& getcwd();
-
-        friend const PathBuffer& getDesktopDirectory();
-
-    	friend const PathBuffer& getExecutableDirectory();
-
         PathBuffer& getcwd();
 
     	PathBuffer& getDesktopDirectory();
@@ -60,8 +61,6 @@ namespace danikk_framework
     	PathBuffer& getExecutableDirectory();
 
     	const char* getLastDirectoryName();
-
-        friend ostream& operator <<(ostream& cout, const PathBuffer& path);
 
         const char* c_string() const;
 
@@ -77,12 +76,26 @@ namespace danikk_framework
 
         size_t size() const;
 
+        size_t capacity() const;
+
         char& operator[](size_t index);
 
 		char firstChar() const;
 
 		char lastChar() const;
+
+	    friend const PathBuffer& getcwd();
+
+	    friend const PathBuffer& getDesktopDirectory();
+
+	    friend const PathBuffer& getExecutableDirectory();
     };
+
+    template<class stream_t> stream_t& operator <<(stream_t& cout, const PathBuffer& data)
+    {
+    	cout << data.c_string();
+    	return cout;
+    }
 
     template<class stringT> PathBuffer& PathBuffer::pushDirectory(const stringT& name)
     {
@@ -90,7 +103,7 @@ namespace danikk_framework
     	{
     		const char* namePtr = name;
 
-    		if(*namePtr == pathSlash && firstChar() == pathSlash)
+    		if(*namePtr == pathSlash && lastChar() == pathSlash)
     		{
         		*this << (namePtr + 1);
     		}
@@ -98,28 +111,38 @@ namespace danikk_framework
     		{
     			*this << (namePtr);
     		}
-    		if(*(m_abp - 1) != pathSlash)
+    		char abpm1 = *(m_abp - 1);
+    		//char abpm2 = *(m_abp - 1);
+    		if(abpm1 != pathSlash)
     		{
     			*this << (pathSlash);
     		}
+    		/*if(abpm1 == pathSlash && abpm2 == pathSlash)
+    		{
+    			abpm1--;
+    		}*/
     		*m_abp = '\0';
     	}
     	else
     	{
-    		if(name.firstChar() == pathSlash && firstChar() == pathSlash)
+    		if(name.firstChar() == pathSlash && lastChar() == pathSlash)
     		{
-    			push(name.data() + 1, name.size() - 1);
+				push(name.data() + 1, name.size() - 1);
+    			if(name.lastChar() != pathSlash)
+        		{
+    				*this << pathSlash;
+        		}
     		}
     		else
     		{
     			push(name.data(), name.size());
-    		}
-    		if(name.lastChar() != pathSlash)
-    		{
-    			*this << (pathSlash);
+
+    			if(name.lastChar() != pathSlash)
+        		{
+        			*this << pathSlash;
+        		}
     		}
         	*m_abp = '\0';
-
     	}
         return *this;
     }
@@ -141,5 +164,3 @@ namespace danikk_framework
 
     const PathBuffer& getExecutableDirectory();
 }
-
-#endif

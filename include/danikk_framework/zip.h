@@ -12,3 +12,5 @@ namespace danikk_framework
 
     const char* zip_error_code_tostr(int error);
 }
+
+#include <danikk_framework/internal/zip.inc>

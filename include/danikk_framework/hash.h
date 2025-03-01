@@ -21,4 +21,9 @@ namespace danikk_framework
 		}
 		return result;
 	}
+
+	template<uint32 size> class Hash
+	{
+
+	};
 }

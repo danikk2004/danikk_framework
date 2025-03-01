@@ -1,61 +1,44 @@
-#ifndef DANIKK_PLATFORM_FILE_FUNCTIONS_H
-#define DANIKK_PLATFORM_FILE_FUNCTIONS_H
+#pragma once
 
-#include <danikk_framework/cstring.h>
+#include <danikk_framework/cstring_functions.h>
 #include <danikk_framework/current_system.h>
 #include <danikk_framework/dynamic_array.h>
-#include <danikk_framework/file_stream.h>
-#include <danikk_framework/memory_stream.h>
+#include <danikk_framework/filestream.h>
 #include <danikk_framework/number.h>
 #include <danikk_framework/path_buffer.h>
 #include <danikk_framework/string_buffer.h>
 #include <danikk_framework/string.h>
 #include <danikk_framework/current_system.h>
 #include <danikk_framework/errno.h>
+#include <danikk_framework/memory.h>
+
+#include <filesystem>
+#include "memory_buffer.h"
 
 #if IS_LINUX
 	#include <sys/stat.h>
-	#include<unistd.h>
+	#include <unistd.h>
+#elif IS_WINDOWS
+	#include <direct.h>
 #else
 	#error not implemented
 #endif
 
 namespace danikk_framework
 {
-	template<class pathT> void readText(pathT& path, String& output)
+	template<class pathT> void readLines(const pathT& path, DynamicArray<String>& output)
 	{
-        FileReader reader(path);
-        if(!reader.isOpen())
-		{
-        	return;
-		}
-		size_t fileSize = reader.size();
-		if(fileSize == 0)
-		{
-			output.clear();
-		}
-		else
-		{
-			output.resize(fileSize);
-			reader.read(output.data(), fileSize);
-		}
-	}
-
-	template<class pathT> void readLines(pathT& path, DynamicArray<String>& output)
-	{
-        FileReader reader(path);
-        if(!reader.isOpen())
-		{
-        	return;
-		}
+        FileReader reader;
+        reader.open(path);
 		DynamicArray<char> data;
-		size_t fileSize = reader.size();
+		uint fileSize = reader.size();
 		data.resize(fileSize);
 		reader.read(data.data(), fileSize);
 		data.cutElements('\r');
 		char* currentCharPtr = data.data();
 		char* endPtr = data.end();
 		const char* lastStringStartPtr = currentCharPtr;
+		output.clear();
 
 		while(currentCharPtr < endPtr)
 		{
@@ -63,99 +46,46 @@ namespace danikk_framework
             if(currentChar == '\n')
             {
                 *currentCharPtr = '\0';
-            	output.push_move(String(lastStringStartPtr, (size_t)currentCharPtr - (size_t)lastStringStartPtr));
+            	output.pushCtor(lastStringStartPtr, (size_t)currentCharPtr - (size_t)lastStringStartPtr);
             	lastStringStartPtr = (currentCharPtr) + 1;
             }
             ++currentCharPtr;
 		}
 	}
 
-	template<class pathT> void readBytes(pathT& path, MemoryStream& output)
-	{
-		FileReader reader(path);
-        if(!reader.isOpen())
-		{
-        	return;
-		}
-		size_t size = reader.size();
-		output.reserve(size);
-		reader.read(output.used(), size);
-		output.skip(size);
-	}
-
-	template<class pathT> void saveText(pathT& path, String& data)
-	{
-		FileWriter writer(path);
-        if(!writer.isOpen())
-		{
-        	return;
-		}
-		writer.write(data.data(), data.size());
-	}
-
-	template<class pathT> void saveLines(pathT& path, DynamicArray<String>& data)
-	{
-		FileWriter writer(path);
-        if(!writer.isOpen())
-		{
-        	return;
-		}
-		for(String& currentString: data)
-		{
-			writer.write(currentString.data(), currentString.size());
-			writer.write('\n');
-		}
-	}
-
-	template<class pathT> bool exits(pathT& path)
+	template<class pathT> bool exitsFile(pathT& path)
 	{
 		int result = ::access(tocstring(path), F_OK);
-		errno = 0;//access меняет errno после неудачи.
+		errno = 0;
 		return result == 0;
 	}
 
 	template<class pathT> errno_t createDirectory(pathT& path)
 	{
 		#ifdef IS_LINUX
-			if(mkdir(tocstring(path), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ) == 0)
-			{
-				return 0;
-			}
+			ERRNO_CALL(int ret = mkdir(tocstring(path), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH ));
 		#else
 			#error not implemented
 		#endif
-		RETURN_ERRNO
+		return ret;
 	}
 
-	template<class pathT> size_t createFile(pathT& path)
+	template<class pathT> uint createFile(pathT& path)
 	{
-		FILE* filePtr = fopen(tocstring(path), "w");
-		if(filePtr)
-		{
-			fclose(filePtr);
-			return 0;
-		}
-		else
-		{
-			RETURN_ERRNO
-		}
+		ERRNO_CALL(FILE* filePtr = fopen(tocstring(path), "w"));
+		return filePtr != NULL;
 	}
 
-	template<class pathT> errno_t remove(const pathT& path)
+	template<class pathT> errno_t removeFile(const pathT& path)
 	{
-		if(::remove(tocstring(path)))
-		{
-			RETURN_ERRNO
-		}
+		ERRNO_CALL(remove(tocstring(path)));
 		return 0;
 	}
 
-	template<class firststr, class secondstr> errno_t rename(firststr& oldPath, secondstr& newPath)
+	template<class firststr, class secondstr> errno_t renameFile(firststr& oldPath, secondstr& newPath)
 	{
-		if(::rename(tocstring(oldPath), tocstring(newPath)))
-		{
-			RETURN_ERRNO
-		}
+		ERRNO_CALL(rename(tocstring(oldPath), tocstring(newPath)));
+		return 0;
 	}
 
 	template<class pathT> bool isDirectory(pathT& path)
@@ -170,11 +100,38 @@ namespace danikk_framework
 		#endif
 	}
 
-	template<class pathT> uint64 fileSize(pathT& path)
+	template<class pathT, class size_t> int fileSize(pathT& path, size_t& size)
 	{
 		struct stat st;
-		stat(tocstring(path), &st);
-		return st.st_size;
+		ERRNO_CALL(stat(tocstring(path), &st));
+		size = st.st_size;
+		if(size == 0)
+		{
+			size = std::filesystem::file_size(path);
+		}
+		return 0;
+	}
+
+	template<class pathT, class size_t> size_t getCharCount(pathT& path, char target)
+	{
+		FileReader reader;
+		reader.open(path);
+		size_t buff_cap = kib(8);
+		size_t buff_size = buff_cap;
+		char buffer[buff_cap];
+		int counter = 0;
+		while(!reader.eof())
+		{
+			buff_size = reader.read(buffer, buff_cap);
+			for(index_t i = 0; i < buff_size; i++)
+			{
+				if(buffer[i] == target)
+				{
+					counter++;
+				}
+			}
+		}
+		return counter;
 	}
 
 	//Получает путь к папке со всеми временными файлами приложения.
@@ -194,6 +151,7 @@ namespace danikk_framework
 
 	//Инициализирует директорию с временными файлами.
 	void initTempDirectory(const char* name);
-}
 
-#endif
+	//CWD переносит в директорию с исполняемым файлом
+	void cwdToExd();
+}

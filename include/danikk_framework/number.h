@@ -1,12 +1,7 @@
-#ifndef DANIKK_PLATFORM_NUMBER_H
-#define DANIKK_PLATFORM_NUMBER_H
+#pragma once
 
-#include <danikk_framework/danikk_framework.h>
-#include <danikk_framework/string.h>
-#include <danikk_framework/type_traits.h>
-#include <cstdlib>
-#include <concepts>
-#include <type_traits>
+#include <danikk_framework/number_base.h>
+#include <danikk_framework/string_buffer.h>
 
 namespace danikk_framework
 {
@@ -48,6 +43,10 @@ namespace danikk_framework
 
 	template<class numberT> numberT parseNumber(const char* data)
 	{
+		if (data == NULL)
+		{
+			return 0;
+		}
 		if constexpr ((std::is_integral<numberT>::value && sizeof(numberT) < 4) || std::same_as<numberT, int>)
 		{
 			return (numberT)std::atoi(data);
@@ -63,7 +62,37 @@ namespace danikk_framework
 		}
 		else
 		{
-			static_assert(true, "this is not nubmer");
+			static_assert(true, "parseNumber::data != num");
+		}
+	}
+
+	template<class numberT> numberT parseNumber(const String& data)
+	{
+		char string_buffer[32]{'\0'};
+		memcpy((char*)string_buffer, data.data(), data.size());
+		return parseNumber<numberT>(string_buffer);
+	}
+
+	template<class numberT> numberT readNumber(const char* str)
+	{
+		StringBuffer<64> numbuffer;
+		while(true)
+		{
+			char chr = *str;
+			if(isNumberChar(chr))
+			{
+				assert(numbuffer.size() < 63);
+				numbuffer << chr;
+			}
+			else
+			{
+				if(chr != '\0')
+				{
+					str++;
+				}
+				return parseNumber<numberT>(numbuffer.c_string());
+			}
+			str++;
 		}
 	}
 
@@ -71,11 +100,6 @@ namespace danikk_framework
 	template<class float_t> struct truncatedFloat
 	{
 		float_t value;
-
-		/*truncatedFloat(float_t value)
-		{
-			this->value = value;
-		}*/
 	};
 
 	template<class stream_t, class float_t> stream_t operator<<(stream_t& out, truncatedFloat<float_t> tf)
@@ -104,26 +128,11 @@ namespace danikk_framework
 		return out;
 	}
 
-	template<class T> struct is_number
-	{
-		typedef remove_const<T>::type unconst_t;
-
-		static constexpr bool value = std::is_floating_point<T>::value ||
-		  std::is_integral<T>::value ||
-		  std::is_integral<unconst_t>::value;
-	};
-
-	template<class T, class Return> struct enable_if_number
-			: public std::enable_if<is_number<T>::value,
-			  Return>
-	{};
-
-	template<class T, class Return> struct enable_if_not_number
-			: public std::enable_if<is_number<T>::value,
-			  Return>
-	{};
-
-	template <class streamT, class num_t> std::enable_if<is_number<num_t>::value,streamT&>::type operator << (streamT& cout, num_t num)
+	/*template <class streamT, class num_t> std::enable_if
+	<
+		is_number<num_t>::value &&
+		!std::is_same<num_t, char>::value, streamT&
+	>::type operator << (streamT& cout, num_t num)
 	{
 		if constexpr (std::is_same<num_t, char>::value)
 		{
@@ -137,7 +146,5 @@ namespace danikk_framework
 			return cout;
 		}
 		return cout;
-	}
+	}*/
 }
-
-#endif

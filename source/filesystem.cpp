@@ -160,7 +160,7 @@ namespace danikk_framework
 		//Если она есть в конец добавляет номер.
 		tempDirectory.pushDirectory(systemTempDirectory);
 		tempDirectory.pushDirectory(name);
-		if(exits(tempDirectory))
+		if(exitsFile(tempDirectory))
 		{
 			size_t lastNumberSize = 0;
 			char* tempDirectoryEnd = tempDirectory.abp();//МБ тут ошибка будет.
@@ -170,10 +170,14 @@ namespace danikk_framework
 			{
 				lastNumberSize = writeNumberToStringBuffer(tempPathCounter++, tempDirectoryEnd, 64);
 			}
-			while(exits(tempDirectory));
+			while(exitsFile(tempDirectory));
 			tempDirectory.skip(lastNumberSize + 1);
 		}
 		createDirectory(tempDirectory);
 	}
 
+	void cwdToExd()
+	{
+		chdir(getExecutableDirectory().c_string());
+	}
 }

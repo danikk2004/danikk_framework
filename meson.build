@@ -1,18 +1,20 @@
 project(
 	'danikk_framework', 
 	'cpp',
-    version: '0.0.3',
     default_options: [
         'cpp_std=c++20',
     ])
 
 subdir('source')
 
-include = include_directories('include')
+include = [include_directories('include'), include_directories('include_lib')]
+
+add_project_arguments('-O3', language : 'cpp')
 
 cpp_args = [
 	'-Wvla',
-	'-Wclass-memaccess'
+	'-Wclass-memaccess',
+	'-Wunused-function'
 ]
 
 lib = static_library(

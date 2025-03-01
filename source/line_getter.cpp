@@ -1,29 +1,31 @@
-#include <danikk_framework/line_getter.h>
+#include <danikk_framework/misc/line_getter.h>
+#include <danikk_framework/assert.h>
 
 namespace danikk_framework
 {
-	LineGetter::LineGetter(char* memory) : memory(memory), lastChar(memory){}
-
-	LineGetter::LineGetter(String& memory) : memory(memory.data()), lastChar(memory.data()){}
-
-	const char* LineGetter::getLine()
+	Line getLine(const char*& str)
 	{
-		const char* result = lastChar;
+		assert(*str != '\0');
+		Line result;
+		result.data = str;
 		while(true)
 		{
-			char currentChar = *lastChar;
-			if(currentChar == '\n' || currentChar == '\0')
+			if(*str == '\0')
 			{
-				*lastChar = '\0';
-				lastChar++;
 				return result;
 			}
-			lastChar++;
+			if(*str == '\n')
+			{
+				str++;
+				return result;
+			}
+			result.size++;
+			str++;
 		}
 	}
 
-	LineGetter::operator bool()
+	bool canGetLine(const char* str)
 	{
-		return *lastChar != '\0';
+		return *str != '\0';
 	}
 }

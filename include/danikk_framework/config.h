@@ -1,41 +1,69 @@
-#ifndef DANIKK_PLATFORM_CONFIG_H
-#define DANIKK_PLATFORM_CONFIG_H
+#pragma once
 
 #include <danikk_framework/danikk_framework.h>
-#include <danikk_framework/named_resource_map.h>
-
+#include <danikk_framework/cataloged_dictionary.h>
+#include <danikk_framework/dictionary.h>
+#include <danikk_framework/cstring_functions.h>
+#include <danikk_framework/number.h>
+#include <danikk_framework/localization.h>
+#include <danikk_framework/log.h>
 
 namespace danikk_framework
 {
-	class BinaryConfig
+	class Config
 	{
 	private:
-		NamedResourceMap<char*> m_data;
+		StringDictionary<String> m_data;
+		uint m_opened = 0;
 	public:
-		BinaryConfig(){}
+		Config() = default;
 
-		BinaryConfig(const char* filename)
+		void openFile(const char* filename);
+
+		void openData(const String& data);
+
+		void openData(const char* data, size_t size);
+
+		template<class key_t, class value_t> void set(const key_t& key, const value_t& value)
 		{
-
+			m_data.insert(key, value);
 		}
 
-        void readFromBuffer(MemoryStream& input)
-        {
-        	FixedArray<char, 64> keyBuffer;
-        	FixedArray<char, 64> valueBuffer;
-        	while(input.)
-        	{
+		template<class key_t> bool exits(const key_t& key)
+		{
+			return m_data.get(key) != NULL;
+		}
 
-        	}
-        	while(true)
-        	{
-
-        	}
-        }
-
-        void writeToBuffer(MemoryStream& output)
-        {
-
-        }
+		template<class ret_t> ret_t get(const String& key)
+		{
+			const String* res = m_data.get(key);
+			if(res == NULL)
+			{
+				res = m_data.get(key);
+				if(res != NULL)
+				{
+					goto res_is_find;
+				}
+				formatLogWarning("Config::get key:% res == NULL", key);
+				abort();
+				if constexpr(is_number<ret_t>::value)
+				{
+					return 0;
+				}
+				else
+				{
+					return (const char*)NULL;
+				}
+			}
+			res_is_find:
+			if constexpr(is_number<ret_t>::value)
+			{
+				return parseNumber<ret_t>(*res);
+			}
+			else
+			{
+				return *res;
+			}
+		}
 	};
 }

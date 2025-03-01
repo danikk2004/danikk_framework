@@ -1,12 +1,15 @@
-#ifndef DANIKK_PLATFORM_CMD_H
-#define DANIKK_PLATFORM_CMD_H
+#pragma once
 
 #include <danikk_framework/string_buffer.h>
 #include <danikk_framework/string.h>
 #include <danikk_framework/filesystem.h>
-#include <danikk_framework/file_stream.h>
-#include <danikk_framework/cstring.h>
+#include <danikk_framework/filestream.h>
+#include <danikk_framework/cstring_functions.h>
 #include <danikk_framework/number.h>
+#include <danikk_framework/format.h>
+#include <danikk_framework/log.h>
+#include <danikk_framework/localization.h>
+
 #include <thread>
 
 namespace danikk_framework
@@ -19,66 +22,67 @@ namespace danikk_framework
 			#error not implemented
 		#endif
 
-        extern thread_local String commandBuffer;
-
-		template<class valueT> static void writeCommandArgToBuffer(valueT argument)
+		inline static void writeArgs(String& buffer)
 		{
-			if constexpr(is_number<valueT>::value)
-			{
-                commandBuffer << (char)' ' << argument;
-			}
-			else
-			{
-				commandBuffer << " \'" << argument << "\'";
-			}
+			(void)buffer;
 		}
 
-		inline static void writeArgs()
+		template<class firstT,class... Types> inline static void writeArgs(String& buffer, firstT arg,Types... args)
 		{
-			(void)commandBuffer;
-		}
-
-		template<class firstT,class... Types> inline static void writeArgs(firstT arg,Types... args)
-		{
-			writeCommandArgToBuffer(arg);
-			writeArgs(args...);
+			formatAppend(buffer, " %", single_quotes(arg));
+			writeArgs(buffer, args...);
 		}
 	}
 
-	template<class firstT,class... Types> void executeCommandWithoutResults(firstT command,Types... args)
+	namespace cmd
 	{
-        using namespace internal;
-		commandBuffer << command;
-		writeArgs(args...);
-		system(commandBuffer.c_string());
-		commandBuffer.clear();
-	}
+		template<class firstT,class... Types> int exec(firstT command,Types... args)
+		{
+			using namespace internal;
+			String command_buffer;
+			command_buffer << command;
+			writeArgs(command_buffer, args...);
 
-	template<class firstT,class... Types> void executeCommand(String& result, firstT command, Types... args)
-	{
-        using namespace internal;
+			if constexpr(IS_DEBUG)
+			{
+				formatLogDebug("% : %", localization("exec_cmd"), command_buffer);
+			}
 
-		PathBuffer tempFilePathBuffer;
-		tempFilePathBuffer.setPath(getTempDirectory());
-		StringBuffer<128> tempFileName;
-		tempFileName
-		<< "temp_cmd_"
-		<< (size_t)&commandBuffer//указатель для commandBuffer у разных потоков свой.
-		<< ".dat";
-		tempFilePathBuffer.setFileName(tempFileName);
+			return system(command_buffer.c_string());
+		}
 
-		commandBuffer << command;
-		writeArgs(args...);
-		commandBuffer << " >" << tempFilePathBuffer.c_string();
-		commandBuffer << command_null_output;
+		template<class firstT,class... Types> int execr(String& result, firstT command, Types... args)
+		{
+			using namespace internal;
 
-        system(commandBuffer.c_string());
+			PathBuffer tempFilePathBuffer;
+			tempFilePathBuffer.setPath(getTempDirectory());
+			format(result, "temp_cmd_%.data", (size_t)&result);//result будет использован как буффер для пути
+			tempFilePathBuffer.setFileName(result);
 
-		internal::commandBuffer.clear();
+			result.clear();//result будет использован как буффер для команды.
+			result << command;
+			writeArgs(result, args...);
+			result << " >" << tempFilePathBuffer.c_string();
+			result << command_null_output;
 
-		readText(tempFilePathBuffer, result);
-		remove(tempFilePathBuffer);
+			if constexpr(IS_DEBUG)
+			{
+				formatLogDebug("% : %", localization("exec_cmd"), result);
+			}
+
+			int res = system(result.c_string());
+
+			result.clear();
+
+			FileReader reader;
+			reader.open(tempFilePathBuffer);
+			assert(reader.isOpen());
+			result.resize(reader.size());
+			reader.read(result.data(), result.size());
+			removeFile(tempFilePathBuffer);
+
+			return res;
+		}
 	}
 }
-
-#endif

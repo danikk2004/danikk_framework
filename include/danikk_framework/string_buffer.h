@@ -1,22 +1,20 @@
-#ifndef DANIKK_PLATFORM_STRING_BUFFER_H
-#define DANIKK_PLATFORM_STRING_BUFFER_H
+#pragma once
 
 #include <danikk_framework/danikk_framework.h>
 #include <danikk_framework/string.h>
-#include <danikk_framework/number.h>
-#include <danikk_framework/cout_features.h>
 #include <danikk_framework/type_traits.h>
+#include <danikk_framework/number_base.h>
 
 #include <string>
+#include <cstring>
+#include <cstdlib>
 
 namespace danikk_framework
 {
 	template<size_t _capacity> class StringBuffer
 	{
-	public:
-		static constexpr size_t capacity = _capacity;
 	private:
-		char m_data[capacity];
+		char m_data[_capacity];
 		char* m_end;
 
 		void write(const char* data, size_t size)
@@ -54,15 +52,9 @@ namespace danikk_framework
 			{
 				const char* ptr = data;
 				char* push_ptr = m_data;
-				size_t remaining = capacity;
 				while(*ptr != '\0')
 				{
-					if(remaining == 0)
-					{
-						throw "[danikk_framework::StringBuffer] capacity < data_size";
-					}
 					*push_ptr = *ptr;
-					remaining--;
 					push_ptr++;
 					ptr++;
 				}
@@ -71,7 +63,7 @@ namespace danikk_framework
 			else
 			{
 				size_t data_size = data.size();
-				if(capacity < data_size)
+				if(capacity() < data_size)
 				{
 					throw "[danikk_framework::StringBuffer] capacity < data_size";
 				}
@@ -108,7 +100,35 @@ namespace danikk_framework
 			return *this;
 		}
 
-		char* c_string()
+		StringBuffer& operator << (const char* data)
+		{
+			int len = strlen(data);
+			memcpy(m_end, data, len);
+			m_end += len;
+			return *this;
+		}
+
+		StringBuffer& operator << (unsigned long int num)
+		{
+			char buffer[64];
+			snprintf(buffer, 64, "%lu", num);
+			*this << (const char*)buffer;
+			return *this;
+		}
+
+		StringBuffer& operator << (const String& str)
+		{
+			memcpy((void*)m_end, (const void*)str.data(), str.size());
+			m_end += str.size();
+			return *this;
+		}
+
+		void resize(size_t n_size)
+		{
+			m_end = (char*)m_data + n_size;
+		}
+
+		const char* c_string()
 		{
 			*m_end = '\0';
 			return m_data;
@@ -138,6 +158,11 @@ namespace danikk_framework
 		char& operator [](size_t index)
 		{
 			return m_data[index];
+		}
+
+		size_t capacity() const
+		{
+			return _capacity;
 		}
 
 		size_t size() const
@@ -179,5 +204,3 @@ namespace danikk_framework
 		return stream;
 	}
 }
-
-#endif

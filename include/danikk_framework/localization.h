@@ -1,28 +1,39 @@
-#ifndef DANIKK_PLATFORM_LOCALIZATION_H
-#define DANIKK_PLATFORM_LOCALIZATION_H
+#pragma once
 
 #include<danikk_framework/danikk_framework.h>
-#include<danikk_framework/cataloged_map.h>
+#include<danikk_framework/cataloged_dictionary.h>
+#include<danikk_framework/string.h>
+#include<danikk_framework/cstring_functions.h>
 #include<initializer_list>
 
 namespace danikk_framework
 {
+	#define set_localization(key, eng, rus)\
+	if(strequal(getLocale(), "ru_RU"))\
+	{\
+		localization.set(key, eng);\
+	}\
+	else\
+	{\
+		localization.set(key, rus);\
+	}\
+
 	class Localization
 	{
 	private:
-		CatalogedMap<String> m_data;
+		CatalogedDictionary<String, '.'> m_data;
 	public:
-		//Конструктора без аргументов нету, так как нужно явно указывать словарь со значениями по умолчанию на английском.
-
 		struct LocalizationPair
 		{
 			const char* key;
 			const char* value;
 		};
 
-		Localization(const std::initializer_list<LocalizationPair>& data);
+		Localization() = default;
 
-		void loadFromText(const char* data);
+		void set(const char* key, const char* value);
+
+		void parsekvlist(const char* str);
 
 		const String& operator()(const char* key);
 	};
@@ -34,9 +45,9 @@ namespace danikk_framework
 	//Что бы везде можно было бы просто ввести localization("ключ").
 	extern Localization localization;
 
-    //Строка текущей локализации.
-    //По умолчанию ставится в английский.
-	extern const char* current_lang;
-}
+	void initLocalization();
 
-#endif
+	void setLocale(const char* name);
+
+	const char* getLocale();
+}

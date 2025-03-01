@@ -13,11 +13,6 @@ namespace danikk_framework
 		return result;
 	}
 
-	size_t powOf2(size_t x)
-	{
-		return 1ULL << x;
-	}
-
 	size_t alignToBigger2Pow(size_t x)
 	{
 		return 1ULL << (log2(x) + 1);

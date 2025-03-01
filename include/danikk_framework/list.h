@@ -1,5 +1,4 @@
-#ifndef DANIKK_PLATFORM_LIST_H
-#define DANIKK_PLATFORM_LIST_H
+#pragma once
 
 #include <danikk_framework/danikk_framework.h>
 #include <danikk_framework/math.h>

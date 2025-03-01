@@ -1,7 +1,9 @@
 #include <danikk_framework/string.h>
 #include <danikk_framework/localization.h>
-#include <danikk_framework/fixed_array.h>
-#include <danikk_framework/cstring.h>
+#include <danikk_framework/array.h>
+#include <danikk_framework/cstring_functions.h>
+#include <danikk_framework/number.h>
+#include <danikk_framework/assert.h>
 #include <danikk_framework/number.h>
 #include <stdlib.h>
 #include <string>
@@ -10,6 +12,151 @@ using namespace std;
 
 namespace danikk_framework
 {
+	bool stringToBool(const String& str)
+	{
+		if (str == "1")
+		{
+			return true;
+		}
+		else if(str == "0")
+		{
+			return false;
+		}
+		else if(str == "True")
+		{
+			return true;
+		}
+		else if(str == "False")
+		{
+			return false;
+		}
+		else if(str == "true")
+		{
+			return true;
+		}
+		else if(str == "false")
+		{
+			return false;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	const char* boolToNumberString(bool value)
+	{
+		return value ? "1" : "0";
+	}
+
+	//static const char* hexdict = "123456789ABCDEF";
+
+	/*String hex(const String& data)
+	{
+		String result;
+		byte* cur = (byte*)data.begin();
+		byte* end = (byte*)data.end();
+		while(cur < end)
+		{
+			byte chr = *cur;
+			cur++;
+			result << hexdict[chr & 0xF0] << hexdict[chr & 0x0F];
+		}
+		return move(result);
+	}
+
+	String unhex(const String& data)
+	{
+		String result;
+		byte* cur = (byte*)data.begin();
+		byte* end = (byte*)data.end();
+		while(cur < end)
+		{
+			byte hex1 = *cur;
+			cur++;
+			byte hex2 = *cur;
+			cur++;
+			byte chr =
+		}
+		return move(result);
+	}*/
+
+	String toCodeList(const String& data)
+	{
+		String result;
+		const byte* cur = (const byte*)data.begin();
+		const byte* end = (const byte*)data.end();
+		while(cur < end)
+		{
+			byte chr = *cur;
+			cur++;
+			result << (uint64)chr << ';';
+		}
+		return move(result);
+	}
+
+	String unCodeList(const String& data)
+	{
+		String result;
+		const char* cur = (const char*)data.begin();
+		const char* end = (const char*)data.end();
+		String numbuf;
+		while(cur < end)
+		{
+			char chr = *cur;
+			if(chr == ';')
+			{
+				byte value = parseNumber<byte>(numbuf);
+				result << *((char*)&value);
+				numbuf.clear();
+			}
+			else
+			{
+				numbuf << chr;
+			}
+			cur++;
+		}
+		return move(result);
+	}
+
+	void toCodeList(String& data)
+	{
+		byte* cdata = (byte*)alloca(data.size());
+		const byte* cur = cdata;
+		const byte* end = cdata + data.size();
+		memcpy(cdata, data.data(), data.size());
+		data.resize(0);
+		while(cur < end)
+		{
+			byte chr = *cur;
+			cur++;
+			data << (uint64)chr << ';';
+		}
+	}
+
+	void unCodeList(String& data)
+	{
+		const char* cur = (const char*)data.begin();
+		const char* end = (const char*)data.end();
+		data.resize(0);
+		String numbuf;
+		while(cur < end)
+		{
+			char chr = *cur;
+			if(chr == ';')
+			{
+				byte value = parseNumber<byte>(numbuf);
+				data << *((char*)&value);
+				numbuf.clear();
+			}
+			else
+			{
+				numbuf << chr;
+			}
+			cur++;
+		}
+	}
+
 	String::String()
 	{
     	m_data = 0;
@@ -25,12 +172,15 @@ namespace danikk_framework
 		memcpy(m_data, other.m_data, m_size);
     }
 
+	String::String(const std::string& value):String((const char*)value.data(), value.size()){}
+
     String::String(String&& other)
     {
+    	assert((ptrdiff_t)this != (ptrdiff_t)&other);
 		m_data = other.m_data;
-		other.m_data = NULL;
 		m_size = other.m_size;
 		m_capacity = other.m_capacity;
+		new (&other) String();
     }
 
 	String::String(const char* ptr, size_t size)
@@ -42,7 +192,19 @@ namespace danikk_framework
     	m_data[m_size] = '\0';
 	}
 
-	String::String(const char* ptr):String(ptr, strlen(ptr)){}
+	String::String(const char* ptr)
+	{
+		if(ptr != NULL)
+		{
+			new (this) String(ptr, strlen(ptr));
+		}
+		else
+		{
+			new (this) String("", (size_t)0);
+		}
+	}
+
+	String::String(const char* begin, const char* end):String(begin, (ptrdiff_t)end - (ptrdiff_t)begin){}
 
 	String::String(char* ptr):String(ptr, strlen(ptr)){}
 
@@ -54,14 +216,6 @@ namespace danikk_framework
     	m_size = size;
     	m_capacity = capacity;
     }
-
-	String::String(DynamicArray<char>&& data)
-	{
-    	m_data = data.data();
-    	m_size = data.size();
-    	m_capacity = data.capacity();
-		new (&data) DynamicArray<char>();//Обнуляем все переменные у массива.
-	}
 
     String::String(size_t size)
 	{
@@ -79,8 +233,6 @@ namespace danikk_framework
     	memset(m_data, initChar, m_size);
     	m_data[m_size] = '\0';
 	}
-
-	String::String(const std::string& value):String((const char*)value.data(), value.length()){}
 
 	String::~String()
 	{
@@ -152,7 +304,7 @@ namespace danikk_framework
     	return true;
 	}
 
-    bool String::operator == (const char* other) const
+    bool String::operator ==(const char* other) const
 	{
     	const char* current = begin();
     	const char* endPtr = end();
@@ -176,13 +328,25 @@ namespace danikk_framework
     	return true;
 	}
 
-	String& String::operator = (const String& other)
+    String::operator bool() const
+	{
+    	return size() > 0;
+	}
+
+	String& String::operator =(const String& other)
 	{
         m_size = other.m_size;
         m_capacity = m_size;
 		m_data = (char*)malloc(m_size);
 		memcpy(m_data, other.m_data, m_size);
         return *this;
+	}
+
+	String& String::operator =(const char* str)
+	{
+		this->clear();
+		*this << str;
+		return *this;
 	}
 
 	String& String::operator = (String&& other)
@@ -205,6 +369,22 @@ namespace danikk_framework
     	m_data[m_size] = value;
     	m_size++;
         return *this;
+    }
+
+    String& String::operator <<(uint64 value)
+    {
+    	char buffer[64];
+    	writeNumberToStringBuffer(value, buffer, 64);
+    	*this << buffer;
+    	return *this;
+    }
+
+    String& String::operator <<(float value)
+    {
+    	char buffer[64];
+    	writeNumberToStringBuffer(value, buffer, 64);
+    	*this << buffer;
+    	return *this;
     }
 
     void String::pushMemory(const char* memory, size_t size)
@@ -247,6 +427,14 @@ namespace danikk_framework
 	const char* String::end() const
     {
         return m_data + m_size;
+    }
+
+    char* String::c_string()
+    {
+    	assert(m_data != NULL);
+    	reserve(1);
+        m_data[m_size] = '\0';
+        return m_data;
     }
 
     const char* String::c_string() const
@@ -299,17 +487,20 @@ namespace danikk_framework
         return true;
     }
 
-    bool String::isEmpty() const
+    bool String::empty() const
     {
     	return m_size == 0;
     }
 
     void String::split(const char* splitPtr, String& output1, String& output2) const
     {
-    	output1 = copy();
-    	output2 = copy();
-        output1.substring(begin(), splitPtr - 1);
-        output2.substring(splitPtr, end());
+    	assert((ptrdiff_t)splitPtr > (ptrdiff_t)begin() && (ptrdiff_t)splitPtr < (ptrdiff_t)end());
+    	output1.clear();
+    	output2.clear();
+        output1.resize((size_t)splitPtr - (size_t)begin());
+        output2.resize((size_t)end() - (size_t)splitPtr - 1);
+        memcpy(output2.data(), splitPtr + 1, output2.size());
+        memcpy(output1.data(), data(), output1.size());
     }
 
     char* String::find(char character)
@@ -364,6 +555,17 @@ namespace danikk_framework
         return NULL;
     }
 
+	int String::indexOf(char chr) const
+	{
+		index_t res = 0;
+		while(m_data[res] != chr || res++ != m_size);
+		if(res == m_size)
+		{
+			return -1;
+		}
+		return res;
+	}
+
     void String::clear()
     {
         m_size = 0;
@@ -371,28 +573,41 @@ namespace danikk_framework
 
     void String::reserve(size_t count) const
 	{
-		size_t targetCapacity = count + m_size;
-		if(m_capacity >= targetCapacity)												//Если вместимости хватает.
+		size_t target_capacity = count + m_size + 1;
+		if(m_capacity >= target_capacity)							//Если вместимости хватает.
 		{
-			return;															//То ничего не делает.
+			return;													//То ничего не делает.
 		}
-		else if(m_data != NULL)													//Если память была выделена до этого.
+
+		if(m_data != NULL)
 		{
-			while(m_capacity < targetCapacity)
+			if(target_capacity < 16)
 			{
-				m_capacity *= 2;
+				m_capacity = 16;
 			}
-			m_data = (char*)realloc(m_data, m_capacity);
-			return;
+			else
+			{
+				while(m_capacity < target_capacity)
+				{
+					m_capacity <<= 1;
+				}
+			}
+
+			//m_data = (char*)realloc(m_data, m_capacity);
+
+			char* new_data = (char*)malloc(m_capacity);
+			memcpy(new_data, m_data, m_size);
+			free(m_data);
+			m_data = new_data;
 		}
 		else
 		{
 			m_capacity = 1;
-			while(m_capacity < targetCapacity)
+			while(m_capacity < target_capacity)
 			{
-				m_capacity *= 2;
+				m_capacity <<= 1;
 			}
-			m_data = (char*)malloc(m_capacity);						//Если память не была выделена до этого, то просто выделяем её.
+			m_data = (char*)malloc(m_capacity);
 		}
 	}
 
@@ -414,10 +629,23 @@ namespace danikk_framework
 		m_data[m_size++] = character;
     }
 
-    void String::resize(size_t count)
+    void String::resize(size_t new_size)
     {
-		reserve(count + 1);
-		m_size = count;
+    	if(new_size > m_size)
+    	{
+    		reserve(new_size + 1);
+    	}
+		m_size = new_size;
+    }
+
+    void String::nullifyMemory()
+    {
+    	memset(m_data, 0, m_capacity);
+    	/*char* end = m_data + m_capacity;
+    	for(char* ptr = m_data; ptr < end; ptr++)
+    	{
+    		*ptr = '\0';
+    	}*/
     }
 
     char String::firstChar() const
@@ -427,7 +655,7 @@ namespace danikk_framework
 
     char String::lastChar() const
     {
-    	return *(m_data + m_size);
+    	return *(m_data + m_size - 1);
     }
 
     bool String::contains(char character) const
@@ -445,24 +673,21 @@ namespace danikk_framework
 
     bool String::startsWith(const char* str) const
     {
-    	const char* endPtr = end();
-
-    	for(const char* current = begin(); current < endPtr; current++)
+    	index_t i;
+    	for(i = 0; i < size(); i++)
     	{
-    		char chr1 = *str;
-    		char chr2 = *current;
+    		char chr1 = str[i];
+    		char chr2 = m_data[i];
+    		if(chr1 == '\0')
+    		{
+    			return true;
+    		}
     		if(chr1 != chr2)
     		{
     			return false;
     		}
-    		if(chr2 == '\0')
-    		{
-    			return true;
-    		}
-    		str++;
-    		current++;
     	}
-    	return false;
+    	return *(str + i) == '\0';
     }
 
     void String::splitToFirstSeparator(char separator, String& output1, String& output2) const
@@ -639,5 +864,28 @@ namespace danikk_framework
     	}
 
 		return *this;
+    }
+
+    String& String::appendToStart(const String& str)
+    {
+    	uint32 original_size = size();
+    	uint32 append_size = str.size();
+    	resize(original_size + append_size);
+    	memmove(m_data + append_size, m_data, original_size);
+    	memcpy(m_data, str.data(), append_size);
+    	return *this;
+    }
+
+    String& String::operator <<(const String& other)
+    {
+    	reserve(other.size());
+    	for(char chr : other)
+    	{
+    		m_data[m_size++] = chr;
+    	}
+    	/*char* write_ptr = end();
+    	resize(size() + other.size());
+    	memcpy(write_ptr, other.data(), other.size());*///ПОЧЕМУТО НЕ РАБОТАЕТ
+    	return *this;
     }
 }

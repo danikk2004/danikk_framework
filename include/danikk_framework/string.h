@@ -1,16 +1,29 @@
 #pragma once
 
-#include <string>
 #include <iostream>
 #include <type_traits>
 
 #include <danikk_framework/danikk_framework.h>
-#include <danikk_framework/dynamic_array.h>
-#include <danikk_framework/cout_features.h>
-#include <danikk_framework/cstring.h>
+#include "cstring_functions.h"
 
 namespace danikk_framework
 {
+	bool stringToBool(const String& str);
+
+	const char* boolToNumberString(bool value);
+
+	/*String hex(cref<String> data);
+
+	String unhex(cref<String> data);*/
+
+	//String toCodeList(cref<String> data);
+
+	//String unCodeList(cref<String> data);
+
+	//void toCodeList(ref<String> data);
+
+	//void unCodeList(ref<String> data);
+
     class Utf8Iterator
     {
     private:
@@ -38,7 +51,7 @@ namespace danikk_framework
 
     class String
     {
-    	friend class MemoryStream;
+    	friend class MemoryBuffer;
     private:
         mutable char* m_data;//В c_string нужно ставить нуль терминатор в конец строки.
         mutable size_t m_size;
@@ -50,11 +63,13 @@ namespace danikk_framework
 
         String(const String& other);
 
+        String(const std::string& other);
+
         String(String&& other);
 
-		String(DynamicArray<char>&& data);
-
 		String(const char* ptr);
+
+		String(const char* begin, const char* end);
 
 		String(const char* ptr, size_t size);
 
@@ -68,9 +83,12 @@ namespace danikk_framework
 
 		String(size_t size, char initChar);
 
-		String(const std::string& value);
-
 		~String();
+
+	    operator const std::string&() const
+		{
+	    	return *((const std::string*)this);
+		}
 
 		String copy() const;
 
@@ -82,27 +100,31 @@ namespace danikk_framework
 
 		void copyData(const char* source, const char* endptr);
 
-	    bool operator != (const String& other) const;
+	    bool operator !=(const String& other) const;
 
-	    bool operator == (const String& other) const;
+	    bool operator ==(const String& other) const;
 
-	    bool operator == (const char* other) const;
+	    bool operator ==(const char* other) const;
 
-	    bool operator > (const String& other) const;
+	    bool operator >(const String& other) const;
 
-	    bool operator < (const String& other) const;
+	    bool operator <(const String& other) const;
 
-        bool operator >= (const String& other) const;
-
-	    bool operator <= (const String& other) const;
+	    operator bool() const;
 
 	    char& operator[](size_t index) const;
 
-	    String& operator = (const String& other);
+	    String& operator =(const String& other);
 
-	    String& operator = (String&& other);
+	    String& operator =(const char* str);
 
-	    String& operator << (char value);
+	    String& operator =(String&& other);
+
+	    String& operator <<(char value);
+
+	    String& operator <<(uint64 value);
+
+	    String& operator <<(float value);
 
 		size_t size() const;
 
@@ -118,6 +140,8 @@ namespace danikk_framework
 
 		char* end();
 
+		char* c_string();
+
 		const char* c_string() const;
 
         char* find(char character);
@@ -127,6 +151,8 @@ namespace danikk_framework
         char* findLast(char character);
 
         const char* findLast(char character) const;
+
+		int indexOf(char chr) const;
 
         void clear();
 
@@ -140,6 +166,8 @@ namespace danikk_framework
 
         void resize(size_t count);
 
+        void nullifyMemory();
+
         char firstChar() const;
 
         char lastChar() const;
@@ -148,7 +176,7 @@ namespace danikk_framework
 
         bool haveOnlyEqualChars(const String& otherString) const;
 
-        bool isEmpty() const;
+        bool empty() const;
 
 		void split(const char* splitPlace, String& output1, String& output2) const;
 
@@ -175,35 +203,9 @@ namespace danikk_framework
         String& cutSideChars(char chr);
 
         String& replace(const String& sub, const String& result);
+
+        String& appendToStart(const String& str);
+
+        String& operator <<(const String& other);
     };
-
-    template<class stream_t> inline stream_t& operator << (stream_t& stream, const String& string)
-    {
-    	const char* end = string.end();
-    	for(const char* current = string.begin(); current < end; current++)
-    	{
-    		stream << (char)*current;
-    	}
-        return stream;
-    }
-
-    template<class stream_t, class string_t> std::enable_if<std::is_same<string_t, String>::value, stream_t&>::type operator << (stream_t& stream, const String& string)
-    {
-    	const char* end = string.end();
-    	for(const char* current = string.begin(); current < end; current++)
-    	{
-    		stream << *current;
-    	}
-        return stream;
-    }
-
-    template<class stream_t, class string_t> std::enable_if<std::is_same<string_t, std::string>::value, stream_t&>::type operator << (stream_t& stream, const std::string& string)
-    {
-    	const char* end = string.end();
-    	for(const char* current = string.begin(); current < end; current++)
-    	{
-    		stream << *current;
-    	}
-        return stream;
-    }
 }

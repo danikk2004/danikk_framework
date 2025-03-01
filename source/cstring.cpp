@@ -1,8 +1,13 @@
+#include <danikk_framework/cstring_functions.h>
 #include <stddef.h>
-#include <danikk_framework/cstring.h>
 
 namespace danikk_framework
 {
+	bool strempty(const char* str)
+	{
+		return *str == '\0';
+	}
+
 	bool strcontains(const char* str, char chr1)
 	{
 		for(char currentChar; (currentChar = *str); str++)
@@ -90,6 +95,27 @@ namespace danikk_framework
 			{
 				return false;
 			}
+		}
+	}
+
+	bool strmifsw(const char*& str1, const char* str2)
+	{
+		const char* str1_copy = str1;
+		while(true)
+		{
+			char chr1 = *str1_copy;
+			char chr2 = *str2;
+			if(chr2 == '\0')
+			{
+				str1 = str1_copy;
+				return true;
+			}
+			if(chr1 != chr2)
+			{
+				return false;
+			}
+			str1_copy++;
+			str2++;
 		}
 	}
 
