@@ -3,13 +3,33 @@
 #include <danikk_framework/log.h>
 #include <danikk_framework/number.h>
 #include <assert.h>
+
 #include <glm/glm.hpp>
-//#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 namespace danikk_framework
 {
 	using glm::uvec2;
 	using glm::vec2;
+
+#define pi glm::pi<float>()
+
+	float constexpr pi_half = 0.5f * pi;
+
+	template<class number_t> number_t clamp(number_t arg, number_t max, number_t min)
+	{
+		if(arg > max)
+		{
+			return arg;
+		}
+		else if(arg < min)
+		{
+			return min;
+		}
+		else min;
+	}
 
 	LOG_OPERATOR(glm::uvec2 data)
 	{
@@ -32,6 +52,23 @@ namespace danikk_framework
 	LOG_OPERATOR(glm::ivec2 data)
 	{
 		formatWrite(out, "%,%", data.x, data.y);
+		return out;
+	}
+
+	LOG_OPERATOR(glm::mat4& data)
+	{
+		if(startLogInfo())
+		{
+			for(index_t x = 0; x < 4; x++)
+			{
+				for(index_t y = 0; y < 4; y++)
+				{
+					log_buffer << data[y][x] << ',';
+				}
+				log_buffer << ' ';
+			}
+			endLog();
+		}
 		return out;
 	}
 
