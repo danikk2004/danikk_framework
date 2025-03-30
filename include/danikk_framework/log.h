@@ -13,6 +13,8 @@ namespace danikk_framework
 	extern FileWriter log_file;
 	extern String log_buffer;
 
+	extern bool enable_memory_log;
+
 	struct LogConfig
 	{
 		bool log_to_file = false;

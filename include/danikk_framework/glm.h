@@ -13,6 +13,8 @@ namespace danikk_framework
 {
 	using glm::uvec2;
 	using glm::vec2;
+	using glm::uvec3;
+	using glm::vec3;
 
 #define pi glm::pi<float>()
 

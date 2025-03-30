@@ -228,6 +228,13 @@ namespace danikk_framework
 			reservesize(count + m_size);
 		}
 
+		//Изменяет размер массива, не вызывает деструкторы/конструкторы
+		void rawResize(size_t newsize)
+		{
+			reservesize(newsize);
+			m_size = newsize;
+		}
+
 		//Изменяет размер массива, инициализируя элементы заданным значением.
 		void resize(size_t newsize, const value_t& baseElement = value_t())
 		{

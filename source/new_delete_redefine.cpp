@@ -9,19 +9,11 @@
 
 namespace danikk_framework
 {
-	static bool enable_log = false;
-
-	void enableAllocatorLog()
-	{
-		if(MALLOC_LOG)
-		{
-			enable_log = true;
-		}
-	}
+	bool enable_memory_log = false;
 
 	void* malloc(size_t s)
 	{
-		if (enable_log)
+		if (enable_memory_log)
 		{
 			formatLogInfo("malloc size:%", s);
 		}
@@ -30,7 +22,7 @@ namespace danikk_framework
 
 	void* realloc(void* ptr, size_t s)
 	{
-		if (enable_log)
+		if (enable_memory_log)
 		{
 			formatLogInfo("realloc size:%", s);
 		}
@@ -39,7 +31,7 @@ namespace danikk_framework
 
 	void* malloc_debug(const char* message, size_t s)
 	{
-		if (enable_log)
+		if (enable_memory_log)
 		{
 			formatLogInfo("% malloc size:%", message, s);
 		}
@@ -48,7 +40,7 @@ namespace danikk_framework
 
 	void* realloc_debug(const char* message, void* ptr, size_t s)
 	{
-		if (enable_log)
+		if (enable_memory_log)
 		{
 			formatLogInfo("% realloc size:%", message, s);
 		}
