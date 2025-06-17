@@ -33,13 +33,19 @@ namespace danikk_framework
 		else min;
 	}
 
+	LOG_OPERATOR(glm::vec2 data)
+	{
+		formatWrite(out, "%,%", data.x, data.y);
+		return out;
+	}
+
 	LOG_OPERATOR(glm::uvec2 data)
 	{
 		formatWrite(out, "%,%", data.x, data.y);
 		return out;
 	}
 
-	LOG_OPERATOR(glm::vec2 data)
+	LOG_OPERATOR(glm::ivec2 data)
 	{
 		formatWrite(out, "%,%", data.x, data.y);
 		return out;
@@ -47,13 +53,13 @@ namespace danikk_framework
 
 	LOG_OPERATOR(glm::vec3 data)
 	{
-		formatWrite(out, "%,%", data.x, data.y, data.z);
+		formatWrite(out, "%,%,%", data.x, data.y, data.z);
 		return out;
 	}
 
-	LOG_OPERATOR(glm::ivec2 data)
+	LOG_OPERATOR(glm::uvec3 data)
 	{
-		formatWrite(out, "%,%", data.x, data.y);
+		formatWrite(out, "%,%,%", data.x, data.y, data.z);
 		return out;
 	}
 
