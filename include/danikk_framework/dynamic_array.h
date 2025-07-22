@@ -235,8 +235,34 @@ namespace danikk_framework
 			m_size = newsize;
 		}
 
+		void resize(size_t newsize)
+		{
+			if(newsize == size())
+			{
+				return;
+			}
+			else if(size() == 0)
+			{
+				reservesize(newsize);
+				m_size = newsize;
+			}
+			else if(newsize > size())
+			{
+				reservesize(newsize);
+				m_size = newsize;
+			}
+			else
+			{
+				while(newsize < m_size)
+				{
+					m_size--;
+					(&m_data[m_size])->~value_t();
+				}
+			}
+		}
+
 		//Изменяет размер массива, инициализируя элементы заданным значением.
-		void resize(size_t newsize, const value_t& baseElement = value_t())
+		void resize(size_t newsize, const value_t& baseElement)
 		{
 			if(newsize == size())
 			{
