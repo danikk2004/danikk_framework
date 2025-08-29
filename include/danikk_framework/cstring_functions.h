@@ -3,6 +3,7 @@
 //#include <cstring>
 //#include <type_traits>
 #include <danikk_framework/danikk_framework.h>
+#include <danikk_framework/array.h>
 
 namespace danikk_framework
 {
@@ -98,6 +99,7 @@ namespace danikk_framework
 	//str move if starts with
 	bool strmifsw(const char*& str1, const char* str2);
 
+
 	//Если str1 начинается с str2, то возвращает true.
 	template<class str2T> bool strstartswith(const char* str1, const str2T& str2)
 	{
@@ -137,6 +139,27 @@ namespace danikk_framework
 	//Возвращает количество копированных символов.
 	//Если оно меньше dest_size, то буффер dest слишком мал.
 	size_t strscpy(char* dest, const char* source, size_t dest_size);
+
+	template<size_t dest_buffer_size, size_t splitter_chars_count> void
+		strsplit(char* string, Array<char*, dest_buffer_size>& dest_buffer, Array<char, splitter_chars_count>& splitters)
+	{
+		dest_buffer.push(string);
+
+	    while (*string != '\0')
+	    {
+	        for(char chr : splitters)
+	        {
+	        	if (*string == chr)
+				{
+		            *string = '\0';
+		    		dest_buffer.push(string + 1);
+					break;
+				}
+	        }
+
+	        string++;
+	    }
+	}
 
 	//Пропускает текст, пока текущий символ совпадает с одним из заданных.
 	CSTRING_TEMPLATE strskipchars(cstringT str, const char chr1, const char chr2)
@@ -212,6 +235,20 @@ namespace danikk_framework
 			str2 ++;
 		}
 		return result;
+	}
+
+	template<class num_t> num_t packString(const char* string)
+	{
+		if constexpr(sizeof(num_t) == 2 || sizeof(num_t) == 1)
+		{
+			return *(num_t*)string;
+		}
+		else
+		{
+			char result[sizeof(num_t)];
+			memcpy(result.data(), string, std::min(strlen(string), sizeof(num_t)));
+			return *(num_t*)result;
+		}
 	}
 
 #undef CSTRING_TEMPLATE

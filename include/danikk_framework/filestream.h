@@ -25,6 +25,11 @@ namespace danikk_framework
 
     	void open();
     public:
+    	FileStream(FILE* filePtr)
+    	{
+    		this->filePtr = filePtr;
+    	}
+
     	DEF_OPEN_F
         {
         	const char* c_path = tocstring(path);

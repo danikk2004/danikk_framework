@@ -20,8 +20,6 @@ using std::swap;
 #define IS_RELEASE not IS_DEBUG
 #define ERROR_INDEX __LONG_MAX__
 #define ALIGNED_STRUCT
-#define malloc(arg) danikk_framework::malloc(arg);
-#define realloc(arg, size) danikk_framework::malloc(arg, size);
 
 namespace danikk_framework
 {

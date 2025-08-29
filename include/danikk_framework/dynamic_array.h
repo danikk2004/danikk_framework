@@ -36,7 +36,9 @@ namespace danikk_framework
             const value_t* end_read_ptr = other.end();
             while(read_ptr < end_read_ptr)
             {
-            	*write_ptr++ = *read_ptr++;
+            	const value_t& read = *read_ptr++;
+            	value_t& write = *write_ptr++;
+            	write = read;
             }
             //memcpy(m_data, other.m_data, m_size);
 		}

@@ -52,14 +52,6 @@ namespace danikk_framework
 		return (valueT*)malloc(sizeof(valueT));
 	}
 
-	inline size_t alignBufferSize(size_t size)
-	{
-		size >>= 3;
-		size++;
-		size <<= 3;
-		return size;
-	}
-
 	/*inline uint64 memorytonum(byte* input, size_t s)
 	{
 		uint64 res = 0;

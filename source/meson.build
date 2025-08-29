@@ -7,7 +7,6 @@ source = files(
 	'countdown.cpp',
 	'cstring.cpp',
 	'datetime.cpp',
-	'dword_string.cpp',
 	'filesystem.cpp',
 	'filestream.cpp',
 	'line_getter.cpp',

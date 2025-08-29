@@ -8,6 +8,55 @@
 
 namespace danikk_framework
 {
+	template<uvec3 m_size> class TensorPosIterator
+	{
+	private:
+		uvec3 current = uvec3(0);
+	public:
+		TensorPosIterator() = default;
+
+		TensorPosIterator(uvec3 current) : current(current){}
+
+		bool operator!=(const TensorPosIterator<m_size> & other) const = default;
+		bool operator==(const TensorPosIterator<m_size> & other) const = default;
+
+		uvec3 operator*()
+		{
+			return current;
+		}
+
+		TensorPosIterator<m_size>& operator++()
+		{
+			current.x++;
+			if(current.x == m_size.x)
+			{
+				current.y++;
+				current.x = 0;
+			}
+			if(current.y == m_size.y)
+			{
+				current.z++;
+				current.y = 0;
+			}
+			assert(current.z != m_size.z + 1);
+			return *this;
+		}
+	};
+
+	template<uvec3 m_size> class TensorIterable
+	{
+	public:
+		TensorPosIterator<m_size> begin()
+		{
+			return TensorPosIterator<m_size>();
+		}
+
+		TensorPosIterator<m_size> end()
+		{
+			return TensorPosIterator<m_size>(uvec3(0, 0, m_size.z));
+		}
+	};
+
 	template<class value_type, uvec3 m_size> class FixedTensor
 	{
 	public:
@@ -17,58 +66,15 @@ namespace danikk_framework
 		static constexpr size_t data_size = m_size.x * m_size.y * m_size.z;
 		value_type m_data[data_size];
 	public:
-		class PosIterator
+
+		TensorIterable<m_size> iteratePos()
 		{
-		private:
-			uvec3 current = uvec3(0);
-		public:
-			PosIterator() = default;
+			return TensorIterable<m_size>();
+		}
 
-			PosIterator(uvec3 current) : current(current){}
-
-    	    bool operator!=(const PosIterator & other) const = default;
-    	    bool operator==(const PosIterator & other) const = default;
-
-    	    uvec3 operator*()
-    	    {
-    	    	return current;
-    	    }
-
-    	    PosIterator& operator++()
-			{
-    	    	current.x++;
-    			if(current.x == m_size.x)
-    			{
-    				current.y++;
-    				current.x = 0;
-    			}
-    			if(current.y == m_size.y)
-    			{
-    				current.z++;
-    				current.y = 0;
-    			}
-    			assert(current.z != m_size.z + 1);
-    			return *this;
-			}
-		};
-
-		class PosIterable
+		inline bool isValidIndex(const uvec3& index)
 		{
-		public:
-			PosIterator begin()
-			{
-				return PosIterator();
-			}
-
-			PosIterator end()
-			{
-				return PosIterator(uvec3(m_size.x - 1, m_size.y - 1, m_size.z - 1));
-			}
-		};
-
-		PosIterable iteratePos()
-		{
-			return PosIterable();
+			return index.x < m_size.x && index.y < m_size.y && index.z < m_size.z;
 		}
 
 		value_t& operator[](uvec3 index)

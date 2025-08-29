@@ -310,7 +310,7 @@ namespace danikk_framework
 					abort();
 				}
 
-				char* lastslashptr;
+				char* lastslashptr = NULL;
 
 				while(true)
 				{

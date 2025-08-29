@@ -104,7 +104,7 @@ namespace danikk_framework
 				if(worker.target_task == NULL)
 				{
 					worker.target_task = this;
-					worker.mutex.unlock();
+					//worker.mutex.unlock();
 					this->worker = &worker;
 				}
 			}

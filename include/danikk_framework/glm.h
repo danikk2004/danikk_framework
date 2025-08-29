@@ -147,4 +147,27 @@ namespace danikk_framework
 	{
 		return vec2(index % size, index / size);
 	}
+
+	inline vec3 parseVec3(char** data)
+	{
+		return vec3(
+				parseNumber<float>(data[0]),
+				parseNumber<float>(data[1]),
+				parseNumber<float>(data[2]));
+	}
+
+	inline vec2 parseVec2(char** data)
+	{
+		return vec2(
+				parseNumber<float>(data[0]),
+				parseNumber<float>(data[1]));
+	}
+
+	inline uvec3 parseUvec3(char** data)
+	{
+		return uvec3(
+				parseNumber<uint32>(data[0]),
+				parseNumber<uint32>(data[1]),
+				parseNumber<uint32>(data[0]));
+	}
 }

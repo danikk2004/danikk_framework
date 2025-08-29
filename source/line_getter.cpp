@@ -3,29 +3,24 @@
 
 namespace danikk_framework
 {
-	Line getLine(const char*& str)
+	char* getLine(char*& str)
 	{
 		assert(*str != '\0');
-		Line result;
-		result.data = str;
+		char* result = str;
 		while(true)
 		{
 			if(*str == '\0')
 			{
+				str++;
 				return result;
 			}
 			if(*str == '\n')
 			{
+				*str = '\0';
 				str++;
 				return result;
 			}
-			result.size++;
 			str++;
 		}
-	}
-
-	bool canGetLine(const char* str)
-	{
-		return *str != '\0';
 	}
 }

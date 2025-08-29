@@ -33,7 +33,7 @@ namespace danikk_framework
 			}
 		}
 
-		Array()
+		constexpr Array()
 		{
 
 		}

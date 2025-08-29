@@ -68,9 +68,7 @@ namespace danikk_framework
 
 	template<class numberT> numberT parseNumber(const String& data)
 	{
-		char string_buffer[32]{'\0'};
-		memcpy((char*)string_buffer, data.data(), data.size());
-		return parseNumber<numberT>(string_buffer);
+		return parseNumber<numberT>(data.c_string());
 	}
 
 	template<class numberT> numberT readNumber(const char* str)
